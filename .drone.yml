@@ -2,6 +2,16 @@ kind: pipeline
 type: kubernetes
 name: Build
 
+anchors:
+  - &build_and_push_docker
+    image: plugins/docker
+    settings:
+      registry: docker.pkg.github.com
+      repo: docker.pkg.github.com/lukaspj/go-spa/go-spa
+      username: lukaspj
+      password:
+        from_secret: github-packages-token
+
 steps:
   - name: fetch
     image: docker:git
@@ -13,67 +23,36 @@ steps:
     commands:
       - go test -race -v ./... -cover
 
-  - name: docker publish master
-    image: plugins/docker
-    settings:
-      registry: docker.pkg.github.com
-      repo: docker.pkg.github.com/lukaspj/go-spa/go-spa
-      tags:
-        - master
-      username: lukaspj
-      password:
-        from_secret: github-packages-token
-      when:
-        branch:
-          - master
-
-  - name: docker publish release
-    image: plugins/docker
-    settings:
-      registry: docker.pkg.github.com
-      repo: docker.pkg.github.com/lukaspj/go-spa/go-spa
-      tags:
-        - $DRONE_SEMVER_MAJOR
-        - $DRONE_SEMVER
-        - latest
-      username: lukaspj
-      password:
-        from_secret: github-packages-token
-    when:
-      event:
-        - tag
-
-
   - name: release
     image: goreleaser/goreleaser
-    volumes:
-        - name: dockersock
-          path: /var/run
     commands:
-      - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
       - goreleaser release
     environment:
       GITHUB_TOKEN:
         from_secret: github-token
-      DOCKER_REGISTRY: docker.pkg.github.com
-      DOCKER_USERNAME: lukaspj
-      DOCKER_PASSWORD:
-        from_secret: github-packages-token
     when:
       event:
         - tag
 
-services:
-  - name: docker
-    image: docker:dind
-    privileged: true
-    volumes:
-      - name: dockersock
-        path: /var/run
+  - name: docker publish master
+    <<: *build_and_push_docker
+    settings:
+      tags:
+        - master
+    when:
+      branch:
+        - master
 
-volumes:
-  - name: dockersock
-    temp: {}
+  - name: docker publish release
+    <<: *build_and_push_docker
+    settings:
+      tags:
+        - ${DRONE_SEMVER_MAJOR}
+        - ${DRONE_SEMVER}
+        - latest
+    when:
+      event:
+        - tag
 
 ---
 kind: secret

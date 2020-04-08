@@ -21,14 +21,6 @@ builds:
   ignore:
     - goos: darwin
       goarch: 386
-dockers:
-  - image_templates:
-      - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:{{ .Tag }}'
-      - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:v{{ .Major }}.{{ .Minor }}'
-      - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:latest'
-    dockerfile: Dockerfile
-    binaries:
-      - go-spa
 archives:
 - replacements:
     darwin: Darwin
