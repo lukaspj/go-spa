@@ -1,0 +1,59 @@
+kind: pipeline
+type: kubernetes
+name: Build
+
+steps:
+  - name: fetch
+    image: docker:git
+    commands:
+      - git fetch --tags
+
+  - name: test
+    image: golang:1.14.1
+    commands:
+      - go test -race -v ./... -cover
+
+  - name: release
+    image: goreleaser/goreleaser
+    volumes:
+        - name: dockersock
+          path: /var/run
+    commands:
+      - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
+      - goreleaser release
+    environment:
+      GITHUB_TOKEN:
+        from_secret: github-token
+      DOCKER_REGISTRY: docker.pkg.github.com
+      DOCKER_USERNAME: lukaspj
+      DOCKER_PASSWORD:
+        from_secret: github-packages-token
+    when:
+      event:
+        - tag
+
+services:
+  - name: docker
+    image: docker:dind
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run
+
+volumes:
+  - name: dockersock
+    temp: {}
+
+---
+kind: secret
+name: github-token
+get:
+  path: github-repo-token
+  name: repotoken
+---
+kind: secret
+name: github-packages-token
+get:
+  path: github-repo-token
+  name: packagetoken
+
