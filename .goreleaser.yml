@@ -28,7 +28,7 @@ dockers:
       - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:latest'
     dockerfile: Dockerfile.scratch
     binaries:
-      - server
+      - go-spa
 archives:
 - replacements:
     darwin: Darwin
