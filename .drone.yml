@@ -6,11 +6,21 @@ anchors:
   - &build_and_push_docker
     image: plugins/docker
     settings:
+  - &github
+    settings:
       registry: docker.pkg.github.com
       repo: docker.pkg.github.com/lukaspj/go-spa/go-spa
       username: lukaspj
       password:
         from_secret: github-packages-token
+  - &harbor
+    settings:
+      registry: harbor.default.cluster.lukasj.org
+      repo: harbor.default.cluster.lukasj.org/public/go-spa
+      username:
+        from_secret: harbor-public-username
+      password:
+        from_secret: harbor-public-token
 
 steps:
   - name: fetch
@@ -34,8 +44,9 @@ steps:
       event:
         - tag
 
-  - name: docker publish master
+  - name: docker publish master to GitHub
     <<: *build_and_push_docker
+    <<: *github
     settings:
       tags:
         - master
@@ -43,8 +54,32 @@ steps:
       branch:
         - master
 
-  - name: docker publish release
+  - name: docker publish master to Harbor
     <<: *build_and_push_docker
+    <<: *harbor
+    settings:
+      tags:
+        - master
+    when:
+      branch:
+        - master
+
+
+  - name: docker publish release to GitHub
+    <<: *build_and_push_docker
+    <<: *github
+    settings:
+      tags:
+        - ${DRONE_SEMVER_MAJOR}
+        - ${DRONE_SEMVER}
+        - latest
+    when:
+      event:
+        - tag
+
+  - name: docker publish release to Harbor
+    <<: *build_and_push_docker
+    <<: *harbor
     settings:
       tags:
         - ${DRONE_SEMVER_MAJOR}
@@ -66,4 +101,15 @@ name: github-packages-token
 get:
   path: github-repo-token
   name: packagetoken
-
+---
+kind: secret
+name: harbor-public-token
+get:
+  path: harbor-sa
+  name: public-token
+---
+kind: secret
+name: harbor-public-username
+get:
+  path: harbor-sa
+  name: public-username
