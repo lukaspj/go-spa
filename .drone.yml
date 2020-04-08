@@ -13,6 +13,37 @@ steps:
     commands:
       - go test -race -v ./... -cover
 
+  - name: docker publish master
+    image: plugins/docker
+    settings:
+      registry: docker.pkg.github.com
+      repo: docker.pkg.github.com/lukaspj/go-spa/go-spa
+      tags:
+        - master
+      username: lukaspj
+      password:
+        from_secret: github-packages-token
+      when:
+        branch:
+          - master
+
+  - name: docker publish release
+    image: plugins/docker
+    settings:
+      registry: docker.pkg.github.com
+      repo: docker.pkg.github.com/lukaspj/go-spa/go-spa
+      tags:
+        - $DRONE_SEMVER_MAJOR
+        - $DRONE_SEMVER
+        - latest
+      username: lukaspj
+      password:
+        from_secret: github-packages-token
+    when:
+      event:
+        - tag
+
+
   - name: release
     image: goreleaser/goreleaser
     volumes:
