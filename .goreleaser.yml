@@ -26,7 +26,7 @@ dockers:
       - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:{{ .Tag }}'
       - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:v{{ .Major }}.{{ .Minor }}'
       - 'docker.pkg.github.com/lukaspj/go-spa/go-spa:latest'
-    dockerfile: Dockerfile.scratch
+    dockerfile: Dockerfile
     binaries:
       - go-spa
 archives:
